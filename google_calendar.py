@@ -23,32 +23,49 @@ TOKEN_FILE = "token.json"               # will be created after login
 def get_google_credentials():
     creds = None
 
+    # Check if credentials file exists
+    if not os.path.exists(CREDENTIALS_FILE):
+        st.error(f"❌ Missing credentials.json file. Please download it from Google Cloud Console and place it in the project directory.")
+        st.info("""
+        **To set up Google Calendar integration:**
+        1. Go to https://console.cloud.google.com/
+        2. Create a new project or select existing one
+        3. Enable Google Calendar API
+        4. Create OAuth 2.0 credentials
+        5. Download credentials.json and place it in this directory
+        """)
+        return None
+
     # Load existing token if available
     if os.path.exists(TOKEN_FILE):
         creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 
     # If no valid creds yet, go through OAuth flow
     if not creds or not creds.valid:
-        flow = Flow.from_client_secrets_file(
-            CREDENTIALS_FILE,
-            scopes=SCOPES,
-            redirect_uri="http://localhost:8501/"  # must match Google Cloud Console exactly
-        )
+        try:
+            flow = Flow.from_client_secrets_file(
+                CREDENTIALS_FILE,
+                scopes=SCOPES,
+                redirect_uri="http://localhost:8501/"  # must match Google Cloud Console exactly
+            )
 
-        auth_url, _ = flow.authorization_url(prompt="consent")
-        st.write(f"[🔑 Login with Google]({auth_url})")
+            auth_url, _ = flow.authorization_url(prompt="consent")
+            st.write(f"[🔑 Login with Google]({auth_url})")
 
-        code = st.query_params.get("code")
-        if code:
-            flow.fetch_token(code=code)
-            creds = flow.credentials
+            code = st.query_params.get("code")
+            if code:
+                flow.fetch_token(code=code)
+                creds = flow.credentials
 
-            # Save token to file (JSON is safer than pickle)
-            with open(TOKEN_FILE, "w") as token:
-                token.write(creds.to_json())
+                # Save token to file (JSON is safer than pickle)
+                with open(TOKEN_FILE, "w") as token:
+                    token.write(creds.to_json())
 
-            # Refresh page so "Logged in" state shows immediately
-            st.rerun()
+                # Refresh page so "Logged in" state shows immediately
+                st.rerun()
+        except Exception as e:
+            st.error(f"Error during authentication: {e}")
+            return None
 
     return creds
 
@@ -101,17 +118,18 @@ def get_calendar_events(creds):
 
 
 # -------------------
-# STREAMLIT APP
+# STREAMLIT APP (only runs if file is executed directly)
 # -------------------
-st.title("📅 Google Calendar to DataFrame")
+if __name__ == "__main__":
+    st.title("📅 Google Calendar to DataFrame")
 
-creds = get_google_credentials()
+    creds = get_google_credentials()
 
-if creds:
-    st.success("✅ Logged in with Google!")
-    df = get_calendar_events(creds)
-    if not df.empty:
-        st.dataframe(df)
-        st.download_button("⬇️ Download as CSV", df.to_csv(index=False), "calendar.csv")
-else:
-    st.info("Please log in with Google to continue.")
+    if creds:
+        st.success("✅ Logged in with Google!")
+        df = get_calendar_events(creds)
+        if not df.empty:
+            st.dataframe(df)
+            st.download_button("⬇️ Download as CSV", df.to_csv(index=False), "calendar.csv")
+    else:
+        st.info("Please log in with Google to continue.")
