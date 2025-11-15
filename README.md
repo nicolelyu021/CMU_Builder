@@ -173,20 +173,6 @@ CMU_Builder/
 
 ---
 
-## 🎤 Hackathon Presentation Tips
-
-1. **Start with demo mode** - It's faster and more reliable
-2. **Show the 3 main features**:
-   - Stats Dashboard (metrics at a glance)
-   - Visual Timeline (interactive Gantt chart)
-   - AI Recommendations (smart suggestions)
-3. **Emphasize the AI** - Mention the scoring algorithm and personalization
-4. **Highlight the visuals** - The timeline makes scheduling intuitive
-
-See `DEMO_FEATURES.md` for detailed presentation script.
-
----
-
 ## 📝 Requirements
 
 - Python 3.8+
